@@ -26,7 +26,7 @@ def prep_file(infile: Union[str, PathLike]) -> Union[str, PathLike]:
     
     return out_f
 
-def run_poseviewer(infile: Union[str, PathLike], hbond_max:float = 3.0) -> None:
+def run_poseviewer(infile: Union[str, PathLike], hbond_max:float = 3.5) -> None:
     
     '''
     Runs poseviewer_interactions to identify all interactins involving the ligand. Ligand is identified as chain 'L' from the previous
@@ -34,7 +34,7 @@ def run_poseviewer(infile: Union[str, PathLike], hbond_max:float = 3.0) -> None:
 
     Args:
     infile - output of prepwizard (so that H-bonds are correctly identified)
-    hbond_max - maximum distance to still count as a hydrogen bond
+    hbond_max - maximum distance to still count as a hydrogen bond (default=3.5 Å)
 
     Returns:
     None
