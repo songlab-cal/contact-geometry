@@ -34,14 +34,14 @@ def _all_ifgs(ligand) -> Tuple[list, list]:
 
     for i, vdm in enumerate(VDM_SMARTS):
 
-        substructs = analyze.evaluate_smarts_canvas(ligand, smarts = vdm, start_index = 0, uniqueFilter=True)
+        substructs = analyze.evaluate_smarts_canvas(ligand, smarts = vdm, start_index = 1, uniqueFilter=True)
 
         if len(substructs) == 1 and substructs[0]:
-            substruc_matches.append(substructs[0])
+            substruc_matches.append([ligand.atom[a].pdbname.strip() for a in substructs[0]])
             substruc_names.append(VDM_NAMES[i])
         else:
-            for item in substructs:
-                substruc_matches.append(item)
+            for match in substructs:
+                substruc_matches.append([ligand.atom[a].pdbname.strip() for a in match])
                 substruc_names.append(VDM_NAMES[i])
     
     return substruc_matches, substruc_names
@@ -78,7 +78,7 @@ def _unique_ifgs(all_matches: List[list], all_names: List[str]) -> Tuple[list, l
 
     return vdm_dict
 
-def parse_structure_file(filename: Union[str, PathLike]) -> Tuple[dict, dict, list]:
+def parse_structure_file(filename: Union[str, PathLike]) -> Tuple[dict, dict]:
 
     infile = Path(filename)
     res_info_file = infile.with_suffix('.json')
@@ -87,7 +87,6 @@ def parse_structure_file(filename: Union[str, PathLike]) -> Tuple[dict, dict, li
         cplx = next(st)
 
     a_info = [(a.index, a.chain, a.pdbres, a.resnum, a.pdbname, a.xyz, a.inscode) for a in cplx.atom]
-    l_info = [(a.index, a.chain, a.pdbres, a.resnum, a.pdbname, a.xyz, a.inscode) for a in cplx.chain["L"].atom]
 
     atomdict = dict()
 
@@ -113,7 +112,7 @@ def parse_structure_file(filename: Union[str, PathLike]) -> Tuple[dict, dict, li
     m,n = _all_ifgs(ligst)
     vdm = _unique_ifgs(m,n)
 
-    return atomdict, vdm, l_info
+    return atomdict, vdm
 
 def parse_poseviewer_file(poseviewer_file: Union[str, PathLike]) -> dict:
 
@@ -153,18 +152,21 @@ def parse_poseviewer_file(poseviewer_file: Union[str, PathLike]) -> dict:
     
     return lig_interactions
 
-def gen_vdms(vdm_dict: Dict[str, str], atom_dict: dict, lig_info:dict) -> dict:
+def gen_vdms(vdm_dict: Dict[str, str], atom_dict: dict) -> dict:
 
     vdm_dictionary = dict()
 
     for entry in atom_dict:
         if entry.startswith('L:'): #ligand is chain L, entries in the atom dict are CH:RESID(NAME)
             vdm_dictionary['Ligand_1'] = []
+            lig_info = atom_dict[entry]
 
             for ifg in vdm_dict:
 
-                atoms = [lig_info[a] for a in vdm_dict[ifg]]
-                vdm = VDM(atoms, ifg)
+                #atoms = [lig_info[a] for a in vdm_dict[ifg]]
+                atoms = vdm_dict[ifg]
+                coords = [lig_info[a]['coords'] for a in vdm_dict[ifg]]
+                vdm = VDM(ifg, atoms, coords)
 
                 vdm_dictionary['Ligand_1'].append(vdm)
     
@@ -232,10 +234,10 @@ def generate_all_vdms(base_dir: str):
         maefile = d / (pdb_id + '_proc_out.mae')
         pv_file = d / (pdb_id +'_proc_out_pv_interactions.csv')
 
-        atomd, vdms, linfo = parse_structure_file(maefile)
+        atomd, vdms = parse_structure_file(maefile)
         interactiond = parse_poseviewer_file(pv_file)
 
-        vdmd = gen_vdms(vdms, atomd, linfo)
+        vdmd = gen_vdms(vdms, atomd)
 
         populate_vdms(vdmd, atomd, interactiond)
 
