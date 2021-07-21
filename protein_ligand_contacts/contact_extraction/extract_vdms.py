@@ -46,18 +46,17 @@ def _all_ifgs(ligand) -> Tuple[list, list]:
     
     return substruc_matches, substruc_names
 
-def _unique_ifgs(all_matches: List[list], all_names: List[str]) -> Tuple[list, list]:
+def _unique_ifgs(all_matches: List[list], all_names: List[str]) -> Dict[str, list]:
     '''
-    Returns unique vdMs from a list of all matches. Any vdM that is fully contained in another vdM
+    Returns unique iFGs from a list of all matches. Any iFG that is fully contained in another vdM
     in the list is removed.
 
     Args:
-    all_matches - all vdms in ligand
-    all_names - all names
+    all_matches - all iFGs in ligand
+    all_names - all atom names in ligand
 
     Returns:
-    final_matches - all unique vdM instances
-    final_names - corresponding names
+    vdm_dict - dictionary indexed by iFG names returning the corresponding atoms that make up that iFG
     '''
 
     final_matches = []
@@ -79,6 +78,18 @@ def _unique_ifgs(all_matches: List[list], all_names: List[str]) -> Tuple[list, l
     return vdm_dict
 
 def parse_structure_file(filename: Union[str, PathLike]) -> Tuple[dict, dict]:
+
+    '''
+    Parses a Maestro file to get information about atoms in the structure, and extracts the iFGs from the ligand.
+
+    Args:
+    filename - input filename (.mae). Ideally this file has been preprocessed by the protein preparation wizard
+
+    Returns:
+    atomdict - Dictionary of all atoms and their coordinates in the structure, indexed by residue in the following format:
+                CH:RESNUM(RESNAME)
+    vdm - dictionary of each unique iFG and the ligand atoms that make it up
+    '''
 
     infile = Path(filename)
     res_info_file = infile.with_suffix('.json')
@@ -102,10 +113,10 @@ def parse_structure_file(filename: Union[str, PathLike]) -> Tuple[dict, dict]:
             atomdict[resid] = {at_name: {'index':idx, 'coords': coords}} 
         else: 
             atomdict[resid].update({at_name: {'index': idx, 'coords': coords}})
-
+    #save processed data
     with open(res_info_file, 'w+') as fout:
         json.dump(atomdict, fout)
-
+    #ligand chain object will be Chain L following our preprocessing
     ligchain = cplx.chain['L']
     ligst = ligchain.extractStructure()
 
@@ -114,7 +125,17 @@ def parse_structure_file(filename: Union[str, PathLike]) -> Tuple[dict, dict]:
 
     return atomdict, vdm
 
-def parse_poseviewer_file(poseviewer_file: Union[str, PathLike]) -> dict:
+def parse_poseviewer_file(poseviewer_file: Union[str, PathLike]) -> Dict[str, List[Tuple[str, str]]]:
+    '''
+    Parses the output of SCRODINGER's poseviwer_interactions.py
+
+    Args:
+    poseviewer_file - csv file output from poseviewer_interactions.py, requires the "-csv" flag when running
+
+    Returns:
+    Dictionary of interactions broken down by ligand. Each entry is a ligand atom, and the values are lists of tuples of 
+    receptor atom, and type of interaction as identified by the poseviewer_interactions script
+    '''
 
     lig_interactions = dict()
 
@@ -153,6 +174,16 @@ def parse_poseviewer_file(poseviewer_file: Union[str, PathLike]) -> dict:
     return lig_interactions
 
 def gen_vdms(vdm_dict: Dict[str, str], atom_dict: dict) -> dict:
+    '''
+    Initializes vdM objects from the iFGs and atomic coordinates extracted by parse_structure_file
+
+    Args:
+    vdm_dict - dictionary of iFGs and their corresponding atoms
+    atom_dict - dictionary of atomic coordinates and indices, indexed first by residue
+
+    Returns:
+    Dictionary with a single Ligand (for this demonstration) that yields a list of iFGs
+    '''
 
     vdm_dictionary = dict()
 
@@ -166,13 +197,24 @@ def gen_vdms(vdm_dict: Dict[str, str], atom_dict: dict) -> dict:
                 #atoms = [lig_info[a] for a in vdm_dict[ifg]]
                 atoms = vdm_dict[ifg]
                 coords = [lig_info[a]['coords'] for a in vdm_dict[ifg]]
+                #instantiate the VDM object with name and coordinates
                 vdm = VDM(ifg, atoms, coords)
 
                 vdm_dictionary['Ligand_1'].append(vdm)
     
     return vdm_dictionary
 
-def get_residue_info(res, atom_dict):
+def get_residue_info(res:str, atom_dict:dict) -> Tuple[list, list]:
+    '''
+    Returns atoms and coordinates for a given residue as two lists
+
+    Args:
+    res - residue name in format CH:RESNUM(RESNAME) as established in parse_structure_file
+    atom_dict - dictionary of atomic coordinates and indices, indexed first by residue
+
+    Returns:
+    list of atoms, list of coordinates for that residue
+    '''
 
     atoms = []
     coords = []
@@ -183,7 +225,17 @@ def get_residue_info(res, atom_dict):
     
     return atoms, coords
 
-def parse_contact(contact, atom_dict):
+def parse_contact(contact: List[Tuple[str, str]], atom_dict: Dict[str, dict]) -> dict:
+    '''
+    Parses a set of contacts for a given ligand atom
+
+    Args:
+    contact - list of contacts to a given atom (of the form (atom, contact type))
+    atom_dict - dictionary of atomic coordinates and indices, indexed first by residue
+
+    Returns:
+    Dictionary of contacts for the ligand atom
+    '''
 
     contact_dict = dict()
 
@@ -210,6 +262,18 @@ def parse_contact(contact, atom_dict):
 
 def populate_vdms(vdm_dict, atom_dict, interaction_dict) -> None:
 
+    '''
+    Populate contact information for the vdMs identified from the ligand
+
+    Args:
+    vdm_dict - dictionary of vdM objects from gen_vdMs
+    atom_dict - dictionary of atomic coordinates and indices, indexed first by residue
+    interaction_dict - dictionary of interactions indexed by ligand atom
+
+    Returns:
+    None - updates the contacts for each vdM
+    '''
+
     for lig in vdm_dict:
 
         lig_interactions = interaction_dict[lig]
@@ -222,7 +286,19 @@ def populate_vdms(vdm_dict, atom_dict, interaction_dict) -> None:
 
             vdm.update_contacts(r)
 
-def generate_all_vdms(base_dir: str):
+def generate_all_vdms(base_dir: str) -> None:
+
+    '''
+    Generates vdMs using a pair of preprocessed maestro and poseviewer interaction files
+    vdms are saved as pdb_name + '_vdms.pkl). ie if the pdb file was originally 4DKL, the processed maestro file is 4DKL_proc_out.mae
+    and the vdm file will be 4DKL_vdms.pkl
+
+    Args:
+    Base directory with subdirectories for each PDB file. 
+
+    Returns:
+    None - generates and saves vdMs
+    '''
 
     for dir in glob.glob(base_dir + '*'):
 
