@@ -15,8 +15,13 @@ from ifg import VDM
 
 xyxcoord = Tuple[float, float, float]
 
-VDM_SMARTS = ['[C,c]=O', 'CC(=O)[O-]','CC(=O)[OH]', 'CC(C)[C;!R]', '[C,c]C([N;H2,H1])=O', '[C,c][N;H2,H1]', '[C,c][O;H1]', '[CX4;H2][S;H1,H0]', 'CSC', 'N=C(N)N', '[O;H1]c1ccccc1', '[C,c][N+;H3]', 'c1c[nH]c2ccccc12', 'c1c[n;H0,H1]cn1', 'c1ccccc1', '[C,c][C;!R]([C;!R])[O;H1]', '[C,c][C;H2;!R][O;H1]', 'c[n;H0,H1]c', '[$([NX3H,NX4H2+]),$([NX3](C)(C)(C))]1[CX4H]([CH2][CH2][CH2]1)','[CHX4]([CH3X4])[CH3X4]', '[CHX4]([CH3X4])[CH2X4][CH3X4]']
-VDM_NAMES = ['carbonyl', 'carboxylate', 'carboxylate', 'isopropyl', 'carboxamide', 'NH', 'OH', 'thiol', 'thioether', 'guanidine', 'phenol', 'posN', 'indole', 'imidazole', 'phenyl', 'isopropanol', 'ethanol', 'secondary_amine', 'pro_ring', 'val_side', 'ile_side']
+VDM_SMARTS = ['[C,c]=O', 'CC(=O)[O-]','CC(=O)[OH]', 'CC(C)[C;!R]', '[C,c]C([N;H2,H1])=O', '[C,c][N;H2,H1]', '[C,c][O;H1]', '[CX4;H2][S;H1,H0]', 'CSC', \ 
+'N=C(N)N', '[O;H1]c1ccccc1', '[C,c][N+;H3]', 'c1c[nH]c2ccccc12', 'c1c[n;H0,H1]cn1', 'c1ccccc1', '[C,c][C;!R]([C;!R])[O;H1]', '[C,c][C;H2;!R][O;H1]', \ 
+'c[n;H0,H1]c', '[$([NX3H,NX4H2+]),$([NX3](C)(C)(C))]1[CX4H]([CH2][CH2][CH2]1)','[CHX4]([CH3X4])[CH3X4]', '[CHX4]([CH3X4])[CH2X4][CH3X4]']
+
+VDM_NAMES = ['carbonyl', 'carboxylate', 'carboxylate', 'isopropyl', 'carboxamide', 'NH', 'OH', 'thiol', \ 
+'thioether', 'guanidine', 'phenol', 'posN', 'indole', 'imidazole', 'phenyl', 'isopropanol', 'ethanol', \ 
+'secondary_amine', 'pro_ring', 'val_side', 'ile_side']
 
 
 def _all_ifgs(ligand) -> Tuple[list, list]:
@@ -49,8 +54,13 @@ def _all_ifgs(ligand) -> Tuple[list, list]:
 
 def _all_ifgs_restrained(ligand):
 
-    VDM_SMARTS_2 = ['[C,c]=O', '[C,c][CX3](=[OX1])[OH0-,OH]', 'CC(C)[C;!R]', '[C,c][CX3](=[OX1])[NX3H2]','[C,c][N;H2,H1]', '[C,c][O;H1]', '[CX4;H2][S;H1,H0]', 'CSC', 'N=C(N)N', '[O;H1]c1ccccc1', '[C,c][N+;H3]', 'c1c[nH]c2ccccc12', 'c1c[n;H0,H1]cn1', 'c1ccccc1', '[C,c][C;!R]([C;!R])[O;H1]', '[C,c][C;H2;!R][O;H1]', 'c[n;H0,H1]c', '[$([NX3H,NX4H2+]),$([NX3](C)(C)(C))]1[CX4H]([CH2][CH2][CH2]1)','[CHX4]([CH3X4])[CH3X4]', '[CHX4]([CH3X4])[CH2X4][CH3X4]']
-    VDM_NAMES_2 = ['carbonyl', 'carboxylate', 'isopropyl', 'carboxamide', 'NH', 'OH', 'thiol', 'thioether', 'guanidine', 'phenol', 'posN', 'indole', 'imidazole', 'phenyl', 'isopropanol', 'ethanol', 'secondary_amine', 'pro_ring', 'val_side', 'ile_side']
+    VDM_SMARTS_2 = ['[C,c]=O', '[C,c][CX3](=[OX1])[OH0-,OH]', 'CC(C)[C;!R]', '[C,c][CX3](=[OX1])[NX3H2]','[C,c][N;H2,H1]', '[C,c][O;H1]', '[CX4;H2][S;H1,H0]', 'CSC', \ 
+    'N=C(N)N', '[O;H1]c1ccccc1', '[C,c][N+;H3]', 'c1c[nH]c2ccccc12', 'c1c[n;H0,H1]cn1', 'c1ccccc1', '[C,c][C;!R]([C;!R])[O;H1]', '[C,c][C;H2;!R][O;H1]', \ 
+    'c[n;H0,H1]c', '[$([NX3H,NX4H2+]),$([NX3](C)(C)(C))]1[CX4H]([CH2][CH2][CH2]1)','[CHX4]([CH3X4])[CH3X4]', '[CHX4]([CH3X4])[CH2X4][CH3X4]']
+
+    VDM_NAMES_2 = ['carbonyl', 'carboxylate', 'isopropyl', 'carboxamide', 'NH', 'OH', 'thiol', 'thioether', \ 
+    'guanidine', 'phenol', 'posN', 'indole', 'imidazole', 'phenyl', 'isopropanol', 'ethanol', \ 
+    'secondary_amine', 'pro_ring', 'val_side', 'ile_side']
 
     ring_vdms = ['phenol', 'phenyl', 'indole', 'imidazole']
     substruc_matches = list()
@@ -65,6 +75,7 @@ def _all_ifgs_restrained(ligand):
 
         if substructs:
             for match in substructs:
+                #if the match is a proper subset of a ring system, it is ignored. Equality does not count as proper subset
                 if name in ring_vdms and any([set(match) < set(r) for r in ring_sys]):
                     continue
                 
