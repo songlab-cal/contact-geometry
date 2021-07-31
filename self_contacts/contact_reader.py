@@ -107,3 +107,6 @@ def compute_vdms():
             pkl.dump(vdms[vdm_type], pkl_file)
     
     return vdms
+
+if __name__ == "__main__":
+    compute_vdms()
