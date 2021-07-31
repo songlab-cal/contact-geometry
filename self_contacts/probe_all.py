@@ -3,7 +3,7 @@ import probe_extraction
 
 pdb_codes = open('pdb_lists/unique_pdbs.txt').read().split(',')[:3]
 pdb_chains = open('pdb_lists/abb8330_Data_S1.txt').read().splitlines()
-pdb_chains = [line for line in pdb_chains if len(line) == 6]
+pdb_chains = [line for line in pdb_chains if line[0] != '#']
 
 for pdb_code in tqdm(pdb_codes):
     chains = [line[-2] for line in pdb_chains if line[:4] == pdb_code]
