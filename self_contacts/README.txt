@@ -21,8 +21,6 @@ This will output unaligned contacts to data/contacts for each contact type and e
 The pickle files each are a tuple with two elements. The first element is NxMx3, where N is the number of observations. 
 Each observation consists of the 3 backbone atom coordinates concatenated with the ifg coordinates, so M = 3 + the size of the ifg. 
 The second element of the array contains the sidechain coordinates (everything except N, C, Ca) for the same N observations. 
-The atoms are (in order) exactly the atoms appearing before "OXT" in data/raw_contacts/aa_seqs.pkl for the aa, 
-and in the same order as those in functional_groups.SMARTS_ATOM_MAP for the ifg.
+The atoms are (in order) exactly the atoms appearing before "OXT" in data/raw_contacts/aa_seqs.pkl for the aa, and in the same order as those in functional_groups.SMARTS_ATOM_MAP for the ifg.
 
-To convert these pkl files to the .npy arrays that are provided in the dataset upload, you can use the script at the top level of the repo after changing the 
-input and output directories.
+To convert these pkl files to the .npy arrays that are provided in the dataset upload, you can use the script at the top level of the repo after changing the input and output directories.
