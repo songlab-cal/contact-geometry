@@ -6,5 +6,6 @@ Our preprocessing pipeline can be run on your own list of PDB files to extract v
 
 Fully pre-processed data for both protein self-contacts and protein-ligand contacts are available as .npy files at INSERT LINK
 
-Parts of this code are modified from the Combs repository under the MIT license: https://github.com/npolizzi/Combs/blob/master/LICENSE.txt
+Parts of this code are modified from the Combs repository under the MIT license: https://github.com/npolizzi/Combs/blob/master/LICENSE.txt.
+
 This repository is also available under the MIT license.
