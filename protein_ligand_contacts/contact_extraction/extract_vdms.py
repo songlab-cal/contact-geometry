@@ -5,6 +5,7 @@ from pathlib import Path
 from os import PathLike
 import pickle
 from typing import Tuple, List, Dict, Union
+import sys
 
 import numpy as np
 import pandas as pd
@@ -50,8 +51,8 @@ def _all_ifgs(ligand) -> Tuple[list, list]:
 
 def _all_ifgs_restrained(ligand):
 
-    VDM_SMARTS_2 = ['[C,c]=O', '[C,c][CX3](=[OX1])[OH0-,OH]', 'CC(C)[C;!R]', '[C,c][CX3](=[OX1])[NX3H2]','[C,c][N;H2,H1]', '[C,c][O;H1]', '[CX4;H2][S;H1,H0]', 'CSC', 'N=C(N)N', '[O;H1]c1ccccc1', '[C,c][N+;H3]', 'c1c[nH]c2ccccc12', 'c1c[n;H0,H1]cn1', 'c1ccccc1', '[C,c][C;!R]([C;!R])[O;H1]', '[C,c][C;H2;!R][O;H1]', 'c[n;H0,H1]c', '[$([NX3H,NX4H2+]),$([NX3](C)(C)(C))]1[CX4H]([CH2][CH2][CH2]1)','[CHX4]([CH3X4])[CH3X4]', '[CHX4]([CH3X4])[CH2X4][CH3X4]']
-    VDM_NAMES_2 = ['carbonyl', 'carboxylate', 'isopropyl', 'carboxamide', 'NH', 'OH', 'thiol', 'thioether', 'guanidine', 'phenol', 'posN', 'indole', 'imidazole', 'phenyl', 'isopropanol', 'ethanol', 'secondary_amine', 'pro_ring', 'val_side', 'ile_side']
+    VDM_SMARTS_2 = ['[C,c]=O', '[C,c][CX3](=[OX1])[OH0-,OH]', 'CC(C)[C;!R]', '[C,c][CX3](=[OX1])[NX3H2]','[C,c][N;H2,H1]', '[C,c][O;H1]', '[CX4;H2][S;H1,H0]', 'CSC', 'N=C(N)N', '[O;H1]c1ccccc1', '[C,c][N+;H3]', 'c1c[nH]c2ccccc12', 'c1c[n;H0,H1]cn1', 'c1ccccc1', '[C,c][C;!R]([C;!R])[O;H1]', '[C,c][C;H2;!R][O;H1]', 'c[n;H0,H1]c', '[$([NX3H,NX4H2+]),$([NX3](C)(C)(C))]1[CX4H]([CH2][CH2][CH2]1)','[CHX4]([CH3X4])[CH3X4]', '[CHX4]([CH3X4])[CH2X4][CH3X4]'] #'[NX3][CX3](=[OX1])[#6]'
+    VDM_NAMES_2 = ['carbonyl', 'carboxylate', 'isopropyl', 'carboxamide', 'NH', 'OH', 'thiol', 'thioether', 'guanidine', 'phenol', 'posN', 'indole', 'imidazole', 'phenyl', 'isopropanol', 'ethanol', 'secondary_amine', 'pro_ring', 'val_side', 'ile_side'] #'amide'
 
     ring_vdms = ['phenol', 'phenyl', 'indole', 'imidazole']
     substruc_matches = list()
@@ -74,6 +75,38 @@ def _all_ifgs_restrained(ligand):
                 substruc_names.append(name)
     
     return substruc_matches, substruc_names
+
+def _all_ifgs_restrained_new_amide(ligand):
+    VDM_SMARTS_2 = ['[C,c]=O', '[C,c][CX3](=[OX1])[OH0-,OH]', 'CC(C)[C;!R]', '[C,c][CX3](=[OX1])[NX3H2]','[NX3][CX3](=[OX1])[#6]', '[C,c][O;H1]', '[CX4;H2][S;H1,H0]', 'CSC', 'N=C(N)N', '[O;H1]c1ccccc1', '[C,c][N+;H3]', 'c1c[nH]c2ccccc12', 'c1c[n;H0,H1]cn1', 'c1ccccc1', '[C,c][C;!R]([C;!R])[O;H1]', '[C,c][C;H2;!R][O;H1]', 'c[n;H0,H1]c', '[$([NX3H,NX4H2+]),$([NX3](C)(C)(C))]1[CX4H]([CH2][CH2][CH2]1)','[CHX4]([CH3X4])[CH3X4]', '[CHX4]([CH3X4])[CH2X4][CH3X4]'] #'[NX3][CX3](=[OX1])[#6]'
+    VDM_NAMES_2 = ['carbonyl', 'carboxylate', 'isopropyl', 'carboxamide', 'NH', 'OH', 'thiol', 'thioether', 'guanidine', 'phenol', 'posN', 'indole', 'imidazole', 'phenyl', 'isopropanol', 'ethanol', 'secondary_amine', 'pro_ring', 'val_side', 'ile_side'] #'amide'
+
+    ring_vdms = ['phenol', 'phenyl', 'indole', 'imidazole']
+    substruc_matches = list()
+    substruc_names = list()
+
+    #if amide, atoms 1 and 0
+    #lists of ring systems. Two rings are merged into a ring system if they share a bond in common
+    ring_sys = rings.find_ring_systems(ligand)
+
+    for i, vdm in enumerate(VDM_SMARTS_2):
+        name = VDM_NAMES_2[i]
+        substructs = analyze.evaluate_smarts_canvas(ligand, smarts = vdm, start_index = 1, uniqueFilter=True)
+
+        if substructs:
+            for match in substructs:
+                #avoid including ring vdms if they are part of a ring system
+                if name in ring_vdms and any([set(match) < set(r) for r in ring_sys]):
+                    continue
+                
+                if name == 'NH':
+                    print("Found an NH")
+                    substruc_matches.append([ligand.atom[a].pdbname.strip() for a in [match[1], match[0]]])
+                else:
+                    substruc_matches.append([ligand.atom[a].pdbname.strip() for a in match])
+                substruc_names.append(name)
+    
+    return substruc_matches, substruc_names
+
 
 def _unique_ifgs(all_matches: List[list], all_names: List[str]) -> Tuple[list, list]:
     '''
@@ -145,7 +178,7 @@ def parse_structure_file(filename: Union[str, PathLike], restrictive: bool = Fal
     if not restrictive:
         m,n = _all_ifgs(ligst)
     else:
-        m, n = _all_ifgs_restrained(ligst)
+        m, n = _all_ifgs_restrained_new_amide(ligst)
     vdm = _unique_ifgs(m,n)
 
     #gets mapping from ligand hydrogen to heavy atom for better parsing probe
@@ -283,8 +316,9 @@ def gen_vdms(vdm_dict: Dict[str, str], atom_dict: dict) -> dict:
             for ifg in vdm_dict:
 
                 #atoms = [lig_info[a] for a in vdm_dict[ifg]]
+                
                 atoms = vdm_dict[ifg]
-                coords = [lig_info[a]['coords'] for a in vdm_dict[ifg]]
+                coords = [lig_info[a]['coords'] for a in atoms]
                 vdm = VDM(ifg, atoms, coords)
 
                 vdm_dictionary['Ligand_1'].append(vdm)
@@ -343,14 +377,29 @@ def populate_vdms(vdm_dict, atom_dict, interaction_dict) -> None:
 
 def generate_all_vdms(base_dir: str, restrictive: bool = False, read_probe: bool =False):
 
-    for dir in glob.glob(base_dir + '*'):
+    all_dirs = [d for d in glob.glob(base_dir + '*') if Path(d).is_dir()]
+    num_dirs = len(all_dirs)
 
+    for i,dir in enumerate(all_dirs):
+
+        #enumerate directory
         d = Path(dir)
         pdb_id = d.parts[-1]
 
-        print(f"Working on {pdb_id}")
+        if pdb_id.isupper():
+            pref = pdb_id +'_proc_out'
+        else:
+            pref = pdb_id + '_protein_ligand_out'
 
-        maefile = d / (pdb_id + '_out.mae')
+        maefile = d / (pref + '.mae')
+
+        if not maefile.exists():
+            continue
+
+        sys.stdout.write(f"\r{((i+1)/num_dirs) * 100:.1f} % ({i+1}/{num_dirs}) | {pdb_id}")
+        sys.stdout.flush()
+
+        #print(f"Working on {pdb_id}")
         pv_file = d / (pdb_id +'_out_pv_interactions.csv')
         probe_file = maefile.with_suffix('.probe')
 
@@ -362,7 +411,7 @@ def generate_all_vdms(base_dir: str, restrictive: bool = False, read_probe: bool
             interactiond = parse_probe_file(probe_file, protonmap)
 
         if not interactiond:
-            print(f"Error with {pdb_id}")
+            print(f"\nError with {pdb_id}")
             continue
 
         vdmd = gen_vdms(vdms, atomd)
@@ -375,7 +424,7 @@ def generate_all_vdms(base_dir: str, restrictive: bool = False, read_probe: bool
             vdm_file = d / (pdb_id + '_restrictive_vdms.pkl')
 
         if read_probe:
-            outfile = vdm_file.parent / (vdm_file.stem + '_probe_extracted.pkl')
+            outfile = vdm_file.parent / (vdm_file.stem + '_probe_extracted_alternate_NH.pkl')
         else:
             outfile = vdm_file
         
@@ -403,3 +452,4 @@ if __name__ == "__main__":
         use_probe = False
 
     generate_all_vdms(args.input_dir, strict, use_probe)
+    print(f"\n")
